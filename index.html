@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Report Attività</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Report Attività">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#FFFFFF">
+<style>
+:root{--accent:#9DAFC2;--ink:#16191D;--bg:#F2F4F7;--muted:#5E6875;--line:#D9DEE5;--red:#C0392B;--green:#2F7D4F;--white:#fff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--white);border-bottom:3px solid var(--accent);
+  padding:calc(10px + env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) 10px max(16px,env(safe-area-inset-left));display:flex;align-items:center;gap:8px}
+header img{height:32px;width:auto;flex:0 1 auto;min-width:0;object-fit:contain;object-position:left}
+header .sp{flex:1}
+main{max-width:560px;margin:0 auto;padding:12px max(16px,env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));display:flex;flex-direction:column}
+h1{font-size:18px;letter-spacing:.06em;margin:4px 0 0}
+.lbl{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.btn{font-weight:700;font-size:15px;font-family:inherit;border-radius:8px;padding:10px 14px;border:1.5px solid var(--line);background:var(--white);color:var(--ink);cursor:pointer}
+.btn:disabled{opacity:.4}
+.btn.dark{background:var(--ink);color:var(--white);border-color:var(--ink)}
+.btn.red{color:var(--red)}
+.day{display:flex;align-items:center;gap:8px;margin-top:4px}
+.day .btn{width:52px;height:48px;padding:0}
+.day b{flex:1;text-align:center}
+#rec{width:170px;height:170px;border-radius:50%;border:0;background:var(--accent);color:var(--ink);font-weight:700;font-size:20px;line-height:1.25;font-family:inherit;margin:22px auto 0;display:block;cursor:pointer;white-space:pre-line}
+#rec.on{background:var(--red);color:var(--white)}
+#status,#sendInfo{color:var(--muted);font-size:14px;text-align:center;margin-top:10px;white-space:pre-line}
+.lh{display:flex;justify-content:space-between;align-items:baseline;margin-top:22px}
+.lh span{font-size:13px;color:var(--muted)}
+#list{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.row{background:var(--white);border:1.5px solid var(--line);border-radius:8px;padding:8px 8px 8px 12px;display:flex;align-items:center;gap:6px}
+.row b{width:58px;font-size:18px;font-variant-numeric:tabular-nums}
+.row .d{flex:1;font-size:14px;color:var(--muted)}
+.row .d.ok{color:var(--green)}
+.row .btn{font-size:13px;padding:8px 10px}
+.empty{text-align:center;color:var(--muted);border:1.5px dashed var(--line);border-radius:8px;padding:22px 12px;font-size:14px}
+#send{margin-top:18px;height:58px;font-size:16px}
+.tip{background:var(--white);border-radius:6px;padding:10px 12px;font-size:13px;color:var(--muted);margin-top:20px}
+dialog{border:0;border-radius:12px;padding:20px;width:min(92vw,420px);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+dialog h2{margin:0 0 8px;font-size:18px}
+dialog label{display:block;margin-top:12px}
+dialog input{width:100%;font-size:16px;font-family:inherit;padding:10px;border:1.5px solid var(--line);border-radius:8px;margin-top:4px}
+dialog .act{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--white);padding:10px 16px;border-radius:8px;font-size:14px;z-index:20;max-width:90vw;text-align:center}
+#install{background:#FFF8E6;border:1.5px solid #F0D99A;border-radius:8px;padding:10px 12px;font-size:14px;margin-top:4px}
+</style>
+</head>
+<body>
+<header><img src="logo.png" alt="Gruppo Del Gaudio"><span class="sp"></span><button class="btn" id="openSettings" style="font-size:13px">Impostazioni</button></header>
+<main>
+  <div id="install" hidden>Per usarla come app: tocca <b>Condividi</b> ⬆️ in Safari e poi <b>"Aggiungi alla schermata Home"</b>.</div>
+  <h1>REPORT ATTIVITÀ</h1>
+  <div class="lbl" style="margin-top:14px">Giorno</div>
+  <div class="day"><button class="btn" id="prev" aria-label="Giorno precedente">◀</button><b id="date"></b><button class="btn" id="next" aria-label="Giorno successivo">▶</button></div>
+  <button id="rec">REGISTRA
+NOTA</button>
+  <div id="status">Tocca per registrare una nota vocale</div>
+  <div class="lh"><span class="lbl">Note audio del giorno</span><span id="count"></span></div>
+  <div id="list"></div>
+  <button class="btn dark" id="send">Invia il report all'ufficio</button>
+  <div id="sendInfo"></div>
+  <div class="tip">Registra una nota per ogni attività: per quale commessa o cantiere, cosa hai fatto, quante ore, se è finita, in corso o bloccata, ed eventuali problemi. Le note restano sul telefono. A fine giornata tocca "Invia il report all'ufficio": il report lo compila l'ufficio. Tieni l'app aperta mentre registri.</div>
+</main>
+
+<dialog id="settings">
+  <h2>Impostazioni</h2>
+  <label class="lbl" for="nome">Il tuo nome e cognome</label><input id="nome" autocomplete="name">
+  <label class="lbl" for="ruolo">Il tuo ruolo</label><input id="ruolo" placeholder="es. geometra, impiegato tecnico">
+  <p id="linkInfo" style="font-size:13px;color:var(--muted);margin:16px 0 0"></p>
+  <label class="lbl" for="tok">Codice bot (token)</label><input id="tok" autocomplete="off" autocapitalize="off">
+  <label class="lbl" for="chat">Codice gruppo (chat id)</label><input id="chat" autocomplete="off" inputmode="numeric">
+  <div class="act"><button class="btn" id="cancel">Annulla</button><button class="btn dark" id="save">Salva</button></div>
+</dialog>
+<dialog id="confirm">
+  <h2 id="cTitle"></h2><p id="cMsg" style="margin:0"></p>
+  <div class="act"><button class="btn" id="cNo">Annulla</button><button class="btn dark" id="cYes">Conferma</button></div>
+</dialog>
+<div id="toast" hidden></div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,"0");
+const ls={get(k,d=""){try{return localStorage.getItem("ra_"+k)??d}catch(e){return d}},set(k,v){try{localStorage.setItem("ra_"+k,v)}catch(e){}}};
+function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,3000)}
+function slug(s){return String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9]+/g,"_")}
+function tag(kind,...f){return kind+"|v1|"+f.map(x=>String(x??"").replace(/\|/g,"/").replace(/\n/g," ").trim()).join("|")}
+
+/* ---- codici dal link di configurazione: ...#k=<base64 json {t,c}> ---- */
+(function(){const m=location.hash.match(/k=([^&]+)/);if(!m)return;
+  try{const j=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1])))));if(j.t)ls.set("tok",j.t);if(j.c)ls.set("chat",String(j.c));toast("Collegamento con l'ufficio configurato")}catch(e){toast("Link di configurazione non valido")}
+  history.replaceState(null,"",location.pathname)})();
+
+/* ---- archivio locale delle note (IndexedDB) ---- */
+let db;
+function openDb(){return new Promise((ok,ko)=>{const r=indexedDB.open("report-attivita",1);
+  r.onupgradeneeded=()=>{const s=r.result.createObjectStore("note",{keyPath:"id"});s.createIndex("giorno","giorno")};
+  r.onsuccess=()=>{db=r.result;ok()};r.onerror=()=>ko(r.error)})}
+function tx(mode){return db.transaction("note",mode).objectStore("note")}
+const put=n=>new Promise((ok,ko)=>{const r=tx("readwrite").put(n);r.onsuccess=ok;r.onerror=()=>ko(r.error)});
+const del=id=>new Promise(ok=>{tx("readwrite").delete(id).onsuccess=ok});
+const byDay=g=>new Promise(ok=>{const r=tx("readonly").index("giorno").getAll(g);r.onsuccess=()=>ok(r.result.sort((a,b)=>a.ora.localeCompare(b.ora)))});
+
+/* ---- giorno ---- */
+let day=new Date();day.setHours(12,0,0,0);
+const dayKey=()=>`${day.getFullYear()}-${pad(day.getMonth()+1)}-${pad(day.getDate())}`;
+const isToday=()=>{const t=new Date();return t.toDateString()===day.toDateString()};
+const mmss=s=>`${Math.floor(s/60)}:${pad(Math.round(s%60))}`;
+
+async function render(){
+  $("date").textContent=day.toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  $("next").disabled=isToday();
+  const note=await byDay(dayKey());
+  const tot=note.reduce((s,n)=>s+(n.durata||0),0),sent=note.filter(n=>n.inviata).length;
+  $("count").textContent=note.length?`${note.length} ${note.length===1?"nota":"note"} · ${mmss(tot)}`:"";
+  if(!sending)$("sendInfo").textContent=!note.length?"":sent===note.length?"✓ Tutte le note di questo giorno sono state inviate all'ufficio.":sent?`${note.length-sent} note ancora da inviare.`:"Nessuna nota ancora inviata.";
+  const L=$("list");L.innerHTML="";
+  if(!note.length){L.innerHTML='<div class="empty">Nessuna nota in questo giorno.</div>';return}
+  for(const n of note){
+    const r=document.createElement("div");r.className="row";
+    r.innerHTML=`<b>${n.ora.slice(0,5).replace("-",":")}</b><span class="d ${n.inviata?"ok":""}">${mmss(n.durata||0)}${n.inviata?" · inviata ✓":""}</span>`;
+    const p=document.createElement("button");p.className="btn";p.textContent=playing===n.id?"Ferma":"Ascolta";p.onclick=()=>togglePlay(n);
+    const d=document.createElement("button");d.className="btn red";d.textContent="Elimina";d.onclick=()=>confirmBox(`Eliminare la nota delle ${n.ora.slice(0,5).replace("-",":")}?`,"L'audio verrà cancellato dal telefono."+(n.inviata?" È già stata inviata: in ufficio resta la copia.":""),async()=>{await del(n.id);render();toast("Nota eliminata")});
+    r.append(p,d);L.append(r);
+  }
+}
+$("prev").onclick=()=>{day.setDate(day.getDate()-1);render()};
+$("next").onclick=()=>{day.setDate(day.getDate()+1);render()};
+
+/* ---- ascolto ---- */
+let audio=null,playing=null;
+function togglePlay(n){if(audio){audio.pause();URL.revokeObjectURL(audio.src)}
+  if(playing===n.id){audio=null;playing=null;render();return}
+  audio=new Audio(URL.createObjectURL(n.blob));playing=n.id;audio.onended=()=>{playing=null;render()};
+  audio.play().catch(()=>toast("Impossibile riprodurre la nota"));render()}
+
+/* ---- registrazione ---- */
+let rec=null,chunks=[],t0=0,tick=null,stream=null;
+function mime(){for(const m of["audio/mp4","audio/webm;codecs=opus","audio/webm"])if(window.MediaRecorder&&MediaRecorder.isTypeSupported(m))return m;return""}
+$("rec").onclick=async()=>{
+  if(rec){rec.stop();return}
+  if(!window.MediaRecorder||!navigator.mediaDevices){toast("Questo browser non può registrare: usa Safari aggiornato");return}
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true}})}
+  catch(e){$("status").textContent="Accesso al microfono negato: consentilo nelle impostazioni del browser.";return}
+  if(audio){audio.pause();audio=null;playing=null}
+  day=new Date();day.setHours(12,0,0,0);
+  const m=mime();rec=new MediaRecorder(stream,m?{mimeType:m,audioBitsPerSecond:48000}:undefined);chunks=[];
+  const start=new Date();t0=Date.now();
+  rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+  rec.onstop=async()=>{clearInterval(tick);stream.getTracks().forEach(t=>t.stop());
+    const durata=(Date.now()-t0)/1000,type=rec.mimeType||m||"audio/mp4";rec=null;setRecUi(false);
+    if(durata<1||!chunks.length){$("status").textContent="Nota troppo corta, non salvata.";return}
+    const ora=`${pad(start.getHours())}-${pad(start.getMinutes())}-${pad(start.getSeconds())}`;
+    await put({id:dayKey()+"_"+ora,giorno:dayKey(),ora,durata,mime:type,blob:new Blob(chunks,{type}),inviata:false});
+    $("status").textContent="Nota salvata.";render()};
+  rec.start(1000);setRecUi(true);
+  tick=setInterval(()=>{$("rec").textContent="STOP\n"+mmss((Date.now()-t0)/1000)},500);
+};
+function setRecUi(on){$("rec").classList.toggle("on",on);$("rec").textContent=on?"STOP\n0:00":"REGISTRA\nNOTA";
+  $("status").textContent=on?"Sto registrando. Tocca STOP per salvare la nota.":"Tocca per registrare una nota vocale"}
+
+/* ---- invio al gruppo Telegram dell'ufficio (stesso bot dell'app Android) ---- */
+let sending=false;
+async function tg(method,body){
+  const tok=ls.get("tok");let r;
+  try{r=await fetch(`https://api.telegram.org/bot${tok}/${method}`,{method:"POST",body})}
+  catch(e){if(!navigator.onLine)throw new Error("nessuna connessione a internet");
+    await fetch(`https://api.telegram.org/bot${tok}/${method}`,{method:"POST",body,mode:"no-cors"});return}
+  let j={};try{j=await r.json()}catch(e){}
+  if(r.ok&&j.ok!==false)return;
+  const d=j.description||("errore "+r.status);
+  if(r.status===401||r.status===404)throw new Error("codice bot non valido (controlla Impostazioni)");
+  if(/chat not found/i.test(d))throw new Error("gruppo dell'ufficio non trovato (controlla il codice gruppo)");
+  if(r.status===403)throw new Error("il bot non è nel gruppo dell'ufficio");
+  if(r.status===429)throw new Error("troppi invii ravvicinati, riprova tra un minuto");
+  throw new Error(d)}
+$("send").onclick=async()=>{
+  if(sending)return;if(rec){toast("Ferma prima la registrazione in corso");return}
+  const note=await byDay(dayKey());
+  if(!note.length){toast("Non ci sono note da inviare per questo giorno");return}
+  if(!ls.get("tok")||!ls.get("chat")){toast("Manca il collegamento con l'ufficio: apri il link ricevuto o inserisci i codici");openSettings();return}
+  if(!ls.get("nome")||!ls.get("ruolo")){toast("Inserisci nome e ruolo in Impostazioni");openSettings();return}
+  const todo=note.filter(n=>!n.inviata).length;
+  confirmBox("Inviare all'ufficio?",todo?`Invio ${todo} ${todo===1?"nota":"note"} per ${$("date").textContent}.`:"Le note sono già state inviate. Vuoi segnalare di nuovo la fine della giornata all'ufficio?",()=>send(note));
+};
+async function send(note){
+  sending=true;$("send").disabled=true;
+  const nome=ls.get("nome"),ruolo=ls.get("ruolo"),data=dayKey(),chat=ls.get("chat");
+  const dataIt=day.toLocaleDateString("it-IT"),n=note.length;
+  try{
+    for(let i=0;i<n;i++){const x=note[i];if(x.inviata)continue;
+      $("sendInfo").textContent=`Invio la nota ${i+1} di ${n}…`;
+      const est=/mp4|aac|m4a/.test(x.mime)?".m4a":".webm";
+      const f=new FormData();f.append("chat_id",chat);
+      f.append("caption",`🧾 Report attività · ${nome} · ${dataIt} ${x.ora.slice(0,5).replace("-",":")} (nota ${i+1} di ${n})\n`+tag("#ATT",nome,data,x.ora,ruolo,`${i+1}/${n}`));
+      f.append("disable_content_type_detection","true");
+      f.append("document",x.blob,`Report_${slug(nome)}_${data}_${x.ora}${est}`);
+      await tg("sendDocument",f);x.inviata=true;await put(x)}
+    $("sendInfo").textContent="Segnalo la fine della giornata…";
+    const f=new FormData();f.append("chat_id",chat);
+    f.append("text",`✅ Fine report · ${nome} · ${dataIt} · ${n} ${n===1?"nota":"note"}\n`+tag("#FINEATT",nome,data,ruolo,n));
+    await tg("sendMessage",f);
+    sending=false;await render();$("sendInfo").textContent=`✓ Report inviato all'ufficio (${n} ${n===1?"nota":"note"}).`;toast("Report inviato");
+  }catch(e){sending=false;await render();$("sendInfo").textContent=`Invio interrotto: ${e.message}\nLe note già inviate restano segnate: tocca di nuovo Invia per completare.`}
+  $("send").disabled=false}
+
+/* ---- finestre ---- */
+function confirmBox(title,msg,yes){$("cTitle").textContent=title;$("cMsg").textContent=msg;const d=$("confirm");
+  $("cNo").onclick=()=>d.close();$("cYes").onclick=()=>{d.close();yes()};d.showModal()}
+function openSettings(){["nome","ruolo","tok","chat"].forEach(k=>$(k).value=ls.get(k));
+  $("linkInfo").textContent=ls.get("tok")?"Collegamento con l'ufficio già configurato. Modifica i codici solo se l'ufficio te lo chiede.":"Collegamento con l'ufficio: apri il link che ti ha mandato l'ufficio, oppure inserisci qui i codici.";
+  $("settings").showModal()}
+$("openSettings").onclick=openSettings;$("cancel").onclick=()=>$("settings").close();
+$("save").onclick=()=>{["nome","ruolo","tok","chat"].forEach(k=>ls.set(k,$(k).value.trim()));$("settings").close();toast("Impostazioni salvate")};
+
+/* ---- avvio ---- */
+const standalone=window.navigator.standalone||matchMedia("(display-mode: standalone)").matches;
+if(!standalone&&/iPhone|iPad/.test(navigator.userAgent))$("install").hidden=false;
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+openDb().then(()=>{render();if(!ls.get("nome"))openSettings()}).catch(()=>toast("Archivio del telefono non disponibile: esci dalla navigazione privata"));
+</script>
+</body>
+</html>
