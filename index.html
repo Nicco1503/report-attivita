@@ -132,8 +132,8 @@ async function render(){
     r.append(p,d);L.append(r);
   }
 }
-$("prev").onclick=()=>{day.setDate(day.getDate()-1);render()};
-$("next").onclick=()=>{day.setDate(day.getDate()+1);render()};
+$("prev").onclick=()=>{if(rec)return;day.setDate(day.getDate()-1);render().then(()=>$("status").textContent=statusIdle())};
+$("next").onclick=()=>{if(rec)return;day.setDate(day.getDate()+1);render().then(()=>$("status").textContent=statusIdle())};
 
 /* ---- ascolto ---- */
 let audio=null,playing=null;
@@ -151,7 +151,7 @@ $("rec").onclick=async()=>{
   try{stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true}})}
   catch(e){$("status").textContent="Accesso al microfono negato: consentilo nelle impostazioni del browser.";return}
   if(audio){audio.pause();audio=null;playing=null}
-  day=new Date();day.setHours(12,0,0,0);
+  const giorno=dayKey(); // la nota va nel giorno selezionato, anche se è un giorno passato
   const m=mime();rec=new MediaRecorder(stream,m?{mimeType:m,audioBitsPerSecond:48000}:undefined);chunks=[];
   const start=new Date();t0=Date.now();
   rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
@@ -159,13 +159,14 @@ $("rec").onclick=async()=>{
     const durata=(Date.now()-t0)/1000,type=rec.mimeType||m||"audio/mp4";rec=null;setRecUi(false);
     if(durata<1||!chunks.length){$("status").textContent="Nota troppo corta, non salvata.";return}
     const ora=`${pad(start.getHours())}-${pad(start.getMinutes())}-${pad(start.getSeconds())}`;
-    await put({id:dayKey()+"_"+ora,giorno:dayKey(),ora,durata,mime:type,blob:new Blob(chunks,{type}),inviata:false});
+    await put({id:giorno+"_"+ora,giorno,ora,durata,mime:type,blob:new Blob(chunks,{type}),inviata:false});
     $("status").textContent="Nota salvata.";render()};
   rec.start(1000);setRecUi(true);
   tick=setInterval(()=>{$("rec").textContent="STOP\n"+mmss((Date.now()-t0)/1000)},500);
 };
 function setRecUi(on){$("rec").classList.toggle("on",on);$("rec").textContent=on?"STOP\n0:00":"REGISTRA\nNOTA";
-  $("status").textContent=on?"Sto registrando. Tocca STOP per salvare la nota.":"Tocca per registrare una nota vocale"}
+  $("status").textContent=on?"Sto registrando. Tocca STOP per salvare la nota.":statusIdle()}
+function statusIdle(){return isToday()?"Tocca per registrare una nota vocale":"Giorno passato: la nota verrà aggiunta a "+$("date").textContent}
 
 /* ---- invio al gruppo Telegram dell'ufficio (stesso bot dell'app Android) ---- */
 let sending=false;
